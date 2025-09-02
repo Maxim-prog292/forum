@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Forum Program · 6 Days</title>
+    <meta
+      name="description"
+      content="Responsive 6-day forum program with i18n (EN/RU/AR), theme switcher, tabs by day, searchable & tag-filterable schedule."
+    />
+    <style>
+      /* ===== Design Tokens ===== */
+      :root {
+        --bg: #ffffff;
+        --fg: #0f172a; /* slate-900 */
+        --muted: #475569; /* slate-600 */
+        --card: #f8fafc; /* slate-50 */
+        --border: #e2e8f0; /* slate-200 */
+        --secondary: #0b0b0b; /* black for light theme secondary */
+        --accent: #d4af37; /* gold */
+        --brand-green: #097969; /* subtle green */
+        --link: #0ea5e9; /* sky-500 */
+        --radius: 22px; /* bigger rounded corners */
+        --space-section: 10px; /* spacing between blocks */
+        --space-similar: 2.5px; /* spacing between similar blocks */
+        --shadow: 0 10px 20px rgba(0, 0, 0, 0.06);
+        --shadow-strong: 0 16px 40px rgba(0, 0, 0, 0.12);
+        --chips-color: #000000;
+      }
+      .theme-dark {
+        --bg: #0b1220; /* deep navy */
+        --fg: #e5e7eb; /* slate-200 */
+        --muted: #94a3b8; /* slate-400 */
+        --card: #0f172a; /* slate-900 */
+        --border: #1f2937; /* slate-800 */
+        --secondary: #ffffff; /* white for dark theme secondary */
+        --accent: #d4af37; /* gold persists */
+        --brand-green: #1ca98c; /* brighter green for dark bg */
+        --link: #38bdf8; /* sky-400 */
+        --shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
+        --shadow-strong: 0 16px 40px rgba(0, 0, 0, 0.55);
+        --chips-color: #ffffff;
+      }
+
+      /* ===== Base Reset ===== */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+         overflow: hidden;
+        margin: 0;
+        margin-top: calc(100vh/6);
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Noto Sans,
+          Noto Naskh Arabic, Amiri, Tahoma, "Helvetica Neue", Arial, sans-serif;
+        background: var(--bg);
+        color: var(--fg);
+        line-height: 1.45;
+        /* Subtle geometric background with an Arabian feel, non-religious */
+        background-image: radial-gradient(
+            circle at 25% 15%,
+            rgba(212, 175, 55, 0.1),
+            transparent 35%
+          ),
+          radial-gradient(
+            circle at 75% 85%,
+            rgba(9, 121, 105, 0.1),
+            transparent 35%
+          ),
+          linear-gradient(135deg, rgba(0, 0, 0, 0.03) 8%, transparent 8%),
+          linear-gradient(45deg, rgba(0, 0, 0, 0.03) 8%, transparent 8%);
+        background-size: auto, auto, 12px 12px, 12px 12px;
+        background-position: center;
+      }
+      a {
+        color: var(--link);
+        text-decoration: none;
+      }
+      img {
+        max-width: 100%;
+        display: block;
+      }
+
+      /* ===== Layout ===== */
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 12px;
+      }
+      /* .wrapperMainContent {
+        margin-top: calc(100vh/10);
+      } */
+      header,
+      .section,
+      .card {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--card);
+        box-shadow: var(--shadow);
+      }
+      header {
+        padding: 12px;
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        backdrop-filter: saturate(1.1) blur(6px);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .brand .logo {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--accent), var(--brand-green));
+        box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.35),
+          inset 0 0 0 2px rgba(0, 0, 0, 0.08);
+        flex: 0 0 auto;
+      }
+      .brand h1 {
+        font-size: clamp(18px, 3.5vw, 24px);
+        margin: 0;
+      }
+
+      nav.controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+
+      /* Search under menu */
+      .searchbar {
+        margin-top: var(--space-section);
+        padding: 8px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+      }
+      .searchbar input[type="search"] {
+        width: 100%;
+        padding: 12px;
+        border-radius: calc(var(--radius) - 6px);
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--fg);
+        outline: none;
+        box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.04);
+      }
+      .searchbar button {
+        padding: 12px 14px;
+        border-radius: calc(var(--radius) - 6px);
+        border: 1px solid var(--border);
+        background: var(--accent);
+        color: #111;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      /* Tabs (days) */
+      .tabs {
+        margin-top: var(--space-section);
+        margin-bottom: var(--space-section);
+        background: none;
+        border: none;
+        box-shadow: none;
+        padding: 8px;
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        scrollbar-width: thin;
+      }
+      .tabs button {
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--fg);
+        border-radius: 999px;
+        padding: 8px 12px;
+        cursor: pointer;
+        white-space: nowrap;
+        position: relative;
+      }
+      .tabs button.active {
+        background: linear-gradient(
+          135deg,
+          rgba(212, 175, 55, 0.2),
+          rgba(9, 121, 105, 0.15)
+        );
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.25) inset;
+      }
+
+      /* Schedule table */
+      .schedule.card {
+        padding: 10px;
+        margin-top: var(--space-section);
+      }
+      .table-wrap {
+        overflow-x: auto;
+        border-radius: calc(var(--radius) - 8px);
+        border: 1px solid var(--border);
+        background: var(--bg);
+      }
+      table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        min-width: 680px;
+      }
+      thead th {
+        position: sticky;
+        top: 0;
+        background: linear-gradient(0deg, var(--bg), var(--card));
+        color: var(--secondary);
+        text-align: start;
+        font-weight: 800;
+        border-bottom: 1px solid var(--border);
+        padding: 12px;
+      }
+      tbody td {
+        border-bottom: 1px dashed var(--border);
+        padding: 12px;
+        vertical-align: top;
+      }
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+      tbody tr {
+        transition: background 120ms ease;
+      }
+      tbody tr:hover {
+        background: rgba(212, 175, 55, 0.08);
+      }
+      .tag {
+        display: inline-block;
+        padding: 4px 10px;
+        border: 1px solid rgba(9, 121, 105, 0.4);
+        background: rgba(9, 121, 105, 0.08);
+        color: var(--fg);
+        border-radius: 999px;
+        font-size: 12px;
+        margin-inline-end: 6px;
+        margin-block: 2px;
+      }
+
+      /* Floating Tags Panel */
+      .fab {
+        position: fixed;
+        right: 14px;
+        bottom: 14px;
+        z-index: 40;
+      }
+      .fab button {
+        background: var(--brand-green);
+        color: #fff;
+        border: none;
+        box-shadow: var(--shadow-strong);
+        padding: 14px 16px;
+        border-radius: 999px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+      }
+      .modal.active {
+        display: flex;
+      }
+      .backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+      }
+      .modal-panel {
+        position: relative;
+        width: min(680px, 92vw);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 14px;
+        box-shadow: var(--shadow-strong);
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-similar);
+        margin-top: 8px;
+      }
+      .chip {
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--chips-color);
+        padding: 8px 12px;
+        border-radius: 999px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .chip.active {
+        background: rgba(212, 175, 55, 0.2);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2) inset;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 12px;
+      }
+      .btn {
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        cursor: pointer;
+      }
+      .btn.primary {
+        background: var(--accent);
+        color: #111;
+        border-color: var(--accent);
+        font-weight: 800;
+      }
+      .btn.ghost {
+        background: transparent;
+        color: var(--fg);
+      }
+
+      /* Utilities */
+      .section {
+        padding: 10px;
+        margin-top: var(--space-section);
+      }
+      .block-group {
+        display: grid;
+        gap: var(--space-similar);
+      }
+      .muted {
+        color: var(--muted);
+      }
+
+      /* Header control group */
+      .kpis {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-similar);
+      }
+      .kpi {
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg);
+      }
+
+      /* RTL support */
+      [dir="rtl"] thead th,
+      [dir="rtl"] tbody td {
+        text-align: start;
+      }
+      @media (max-width: 768px) {
+         body {
+           margin: 0;
+           overflow: auto;
+        }
+      }
+      /* Small screens tweaks */
+      @media (max-width: 640px) {
+        .row {
+          gap: 8px;
+        }
+        .searchbar {
+          grid-template-columns: 1fr;
+        }
+        .searchbar button {
+          width: 100%;
+        }
+        .kpis {
+          grid-template-columns: 1fr;
+        }
+        body {
+           margin: 0;
+           overflow: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapperMainContent">
+
+    </div>
+    <header class="container">
+      <div class="row">
+        <div class="brand">
+          <h1 id="title">Forum Program</h1>
+        </div>
+        <nav class="controls">
+          <label>
+            <span class="muted" data-i18n="languageLabel">Language</span>
+            <select id="langSelect" aria-label="Language selector">
+              <option value="en">English</option>
+              <option value="ru">Русский</option>
+              <option value="ar">العربية</option>
+            </select>
+          </label>
+          <button id="themeToggle" class="btn" aria-label="Toggle theme">
+            🌞/🌙
+          </button>
+        </nav>
+      </div>
+
+      <div class="searchbar card">
+        <input
+          id="searchInput"
+          type="search"
+          placeholder="Search agenda..."
+          data-i18n-ph="searchPlaceholder"
+        />
+        <button id="clearSearch" class="btn" data-i18n="clear">Clear</button>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="schedule card" aria-live="polite">
+        <div class="table-wrap">
+          <div class="tabs card" role="tablist" aria-label="Days">
+            <!-- Tabs injected by JS -->
+          </div>
+          <table id="scheduleTable">
+            <thead>
+              <tr>
+                <th data-i18n="time">Time</th>
+                <th data-i18n="event">Event</th>
+                <th data-i18n="duration">Duration</th>
+                <th data-i18n="location">Location</th>
+                <th data-i18n="type">Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Rows injected by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+</div>
+    <div class="fab">
+      <button id="openTags" aria-haspopup="dialog" data-i18n="openTags">
+        Tags
+      </button>
+    </div>
+
+    <!-- Tags Modal -->
+    <div
+      class="modal"
+      id="tagsModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tagsTitle"
+    >
+      <div class="backdrop" data-close></div>
+      <div class="modal-panel">
+        <h2 id="tagsTitle" data-i18n="tags">Tags</h2>
+        <p class="muted" data-i18n="tagsHint">
+          Select tags to filter the schedule.
+        </p>
+        <div id="tagChips" class="chips"></div>
+        <div class="modal-actions">
+          <button class="btn ghost" data-action="clear" data-i18n="clear">
+            Clear
+          </button>
+          <button class="btn primary" data-action="apply" data-i18n="apply">
+            Apply
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ===== I18N Dictionaries (EN, RU, AR) =====
+      const i18n = {
+        en: {
+          title: "Forum Program",
+          languageLabel: "Language",
+          searchPlaceholder: "Search agenda…",
+          clear: "Clear",
+          days: "Days",
+          timezone: "Timezone",
+          time: "Time",
+          event: "Event",
+          duration: "Duration",
+          location: "Location",
+          type: "Type",
+          tags: "Tags",
+          tagsHint: "Select tags to filter the schedule.",
+          openTags: "Tags",
+          apply: "Apply",
+          day: (i) => `Day ${i}`,
+          types: {
+            keynote: "Keynote",
+            panel: "Panel",
+            workshop: "Workshop",
+            networking: "Networking",
+            culture: "Cultural",
+            startup: "Startup",
+          },
+        },
+        ru: {
+          title: "Программа форума",
+          languageLabel: "Язык",
+          searchPlaceholder: "Поиск по программе…",
+          clear: "Сброс",
+          days: "Дней",
+          timezone: "Часовой пояс",
+          time: "Время",
+          event: "Мероприятие",
+          duration: "Длительность",
+          location: "Локация",
+          type: "Тип",
+          tags: "Теги",
+          tagsHint: "Выберите теги для фильтрации программы.",
+          openTags: "Теги",
+          apply: "Применить",
+          day: (i) => `День ${i}, 2${i} сентября`,
+          types: {
+            keynote: "Пленарное",
+            panel: "Панель",
+            workshop: "Воркшоп",
+            networking: "Нетворкинг",
+            culture: "Культура",
+            startup: "Стартап",
+          },
+        },
+        ar: {
+          title: "برنامج المنتدى",
+          languageLabel: "اللغة",
+          searchPlaceholder: "ابحث في الجدول…",
+          clear: "مسح",
+          days: "الأيام",
+          timezone: "المنطقة الزمنية",
+          time: "الوقت",
+          event: "الفعالية",
+          duration: "المدة",
+          location: "المكان",
+          type: "النوع",
+          tags: "الوسوم",
+          tagsHint: "اختر الوسوم لتصفية الجدول.",
+          openTags: "وسوم",
+          apply: "تطبيق",
+          day: (i) => `اليوم ${i}`,
+          types: {
+            keynote: "كلمة رئيسية",
+            panel: "جلسة نقاش",
+            workshop: "ورشة عمل",
+            networking: "تعارف",
+            culture: "ثقافي",
+            startup: "شركات ناشئة",
+          },
+        },
+      };
+
+      // ===== Demo Data (6 Days). Timestamp strings are local times (24h). =====
+      const TAGS = [
+        "keynote",
+        "panel",
+        "workshop",
+        "networking",
+        "culture",
+        "startup",
+      ];
+
+      const events = [
+        // day: 1..6
+        {
+          day: 1,
+          start: "09:00",
+          end: "10:00",
+          type: "keynote",
+          tags: ["keynote"],
+          title: {
+            en: "Opening & Registration",
+            ru: "Открытие и регистрация",
+            ar: "الافتتاح والتسجيل",
+          },
+          location: {
+            en: "Main Hall",
+            ru: "Главный зал",
+            ar: "القاعة الرئيسية",
+          },
+          desc: {
+            en: "Welcome remarks and check-in.",
+            ru: "Приветствие и регистрация.",
+            ar: "كلمات ترحيبية والتسجيل.",
+          },
+        },
+        {
+          day: 1,
+          start: "10:15",
+          end: "11:30",
+          type: "panel",
+          tags: ["panel"],
+          title: {
+            en: "Regional Trade Panels",
+            ru: "Панель о региональной торговле",
+            ar: "جلسات التجارة الإقليمية",
+          },
+          location: { en: "Room A", ru: "Зал A", ar: "قاعة أ" },
+          desc: {
+            en: "Opportunities across MENA & Europe.",
+            ru: "Возможности между MENA и Европой.",
+            ar: "الفرص بين منطقة الشرق الأوسط وشمال أفريقيا وأوروبا.",
+          },
+        },
+        {
+          day: 1,
+          start: "12:00",
+          end: "13:00",
+          type: "networking",
+          tags: ["networking"],
+          title: {
+            en: "Networking Lunch",
+            ru: "Обед и нетворкинг",
+            ar: "غداء تعارف",
+          },
+          location: { en: "Garden Terrace", ru: "Терраса", ar: "التراس" },
+          desc: {
+            en: "Curated meetups by sector.",
+            ru: "Тематические встречи по отраслям.",
+            ar: "لقاءات منسقة حسب القطاعات.",
+          },
+        },
+        {
+          day: 1,
+          start: "14:00",
+          end: "16:00",
+          type: "workshop",
+          tags: ["workshop", "startup"],
+          title: {
+            en: "Cross-border Startup Clinic",
+            ru: "Кросс-бордер клиника для стартапов",
+            ar: "عيادة للشركات الناشئة عبر الحدود",
+          },
+          location: { en: "Lab 1", ru: "Лаборатория 1", ar: "المعمل 1" },
+          desc: {
+            en: "Regulatory and go-to-market.",
+            ru: "Регуляторика и выход на рынок.",
+            ar: "التشريعات والدخول إلى السوق.",
+          },
+        },
+
+        {
+          day: 2,
+          start: "09:30",
+          end: "10:15",
+          type: "keynote",
+          tags: ["keynote"],
+          title: {
+            en: "Sustainable Infrastructure",
+            ru: "Устойчивая инфраструктура",
+            ar: "البنية التحتية المستدامة",
+          },
+          location: {
+            en: "Main Hall",
+            ru: "Главный зал",
+            ar: "القاعة الرئيسية",
+          },
+          desc: {
+            en: "Scalable models for cities.",
+            ru: "Масштабируемые модели для городов.",
+            ar: "نماذج قابلة للتوسّع للمدن.",
+          },
+        },
+        {
+          day: 2,
+          start: "10:30",
+          end: "12:00",
+          type: "workshop",
+          tags: ["workshop"],
+          title: {
+            en: "Public–Private Partnership Lab",
+            ru: "Лаборатория ГЧП",
+            ar: "مختبر الشراكة بين القطاعين",
+          },
+          location: { en: "Room B", ru: "Зал B", ar: "قاعة ب" },
+          desc: {
+            en: "Case exercises.",
+            ru: "Кейс-упражнения.",
+            ar: "تمارين حالة عملية.",
+          },
+        },
+        {
+          day: 2,
+          start: "13:00",
+          end: "15:00",
+          type: "panel",
+          tags: ["panel"],
+          title: {
+            en: "Tourism & Culture Tracks",
+            ru: "Треки: туризм и культура",
+            ar: "مسارات السياحة والثقافة",
+          },
+          location: { en: "Room C", ru: "Зал C", ar: "قاعة ج" },
+          desc: {
+            en: "Cross-cultural collaboration.",
+            ru: "Межкультурное сотрудничество.",
+            ar: "تعاون عبر الثقافات.",
+          },
+        },
+
+        {
+          day: 3,
+          start: "09:00",
+          end: "10:00",
+          type: "keynote",
+          tags: ["keynote"],
+          title: {
+            en: "Digital Transformation",
+            ru: "Цифровая трансформация",
+            ar: "التحول الرقمي",
+          },
+          location: {
+            en: "Main Hall",
+            ru: "Главный зал",
+            ar: "القاعة الرئيسية",
+          },
+          desc: {
+            en: "Future-ready organizations.",
+            ru: "Организации будущего.",
+            ar: "منظمات جاهزة للمستقبل.",
+          },
+        },
+        {
+          day: 3,
+          start: "10:15",
+          end: "11:45",
+          type: "workshop",
+          tags: ["workshop"],
+          title: {
+            en: "AI for Operations",
+            ru: "ИИ для операций",
+            ar: "الذكاء الاصطناعي للعمليات",
+          },
+          location: { en: "Lab 2", ru: "Лаборатория 2", ar: "المعمل 2" },
+          desc: {
+            en: "Process automation.",
+            ru: "Автоматизация процессов.",
+            ar: "أتمتة العمليات.",
+          },
+        },
+        {
+          day: 3,
+          start: "12:00",
+          end: "13:00",
+          type: "networking",
+          tags: ["networking", "culture"],
+          title: {
+            en: "Marketplace Showcase",
+            ru: "Выставка-площадка",
+            ar: "سوق العروض",
+          },
+          location: { en: "Expo Area", ru: "Экспо-зона", ar: "منطقة المعرض" },
+          desc: {
+            en: "Products and regional crafts.",
+            ru: "Продукты и ремесла региона.",
+            ar: "منتجات وحِرف من المنطقة.",
+          },
+        },
+
+        {
+          day: 4,
+          start: "09:30",
+          end: "10:30",
+          type: "panel",
+          tags: ["panel"],
+          title: {
+            en: "Energy & Transition",
+            ru: "Энергетика и переход",
+            ar: "الطاقة والتحوّل",
+          },
+          location: {
+            en: "Main Hall",
+            ru: "Главный зал",
+            ar: "القاعة الرئيسية",
+          },
+          desc: {
+            en: "Practical pathways.",
+            ru: "Практические пути.",
+            ar: "مسارات عملية.",
+          },
+        },
+        {
+          day: 4,
+          start: "11:00",
+          end: "13:00",
+          type: "workshop",
+          tags: ["workshop", "startup"],
+          title: {
+            en: "Investor Readiness",
+            ru: "Готовность к инвестициям",
+            ar: "الجاهزية للاستثمار",
+          },
+          location: { en: "Room D", ru: "Зал D", ar: "قاعة د" },
+          desc: {
+            en: "Pitch & metrics.",
+            ru: "Питч и метрики.",
+            ar: "العرض والمؤشرات.",
+          },
+        },
+        {
+          day: 4,
+          start: "14:00",
+          end: "15:30",
+          type: "networking",
+          tags: ["networking"],
+          title: {
+            en: "B2B Meetings",
+            ru: "B2B-встречи",
+            ar: "اجتماعات عمل ثنائية",
+          },
+          location: {
+            en: "Meeting Pods",
+            ru: "Переговорные",
+            ar: "غرف اجتماعات",
+          },
+          desc: {
+            en: "Pre-matched sessions.",
+            ru: "Предсмэтченные сессии.",
+            ar: "جلسات متطابقة مسبقًا.",
+          },
+        },
+
+        {
+          day: 5,
+          start: "09:00",
+          end: "10:00",
+          type: "keynote",
+          tags: ["keynote"],
+          title: {
+            en: "Logistics & Ports",
+            ru: "Логистика и порты",
+            ar: "اللوجستيات والموانئ",
+          },
+          location: {
+            en: "Main Hall",
+            ru: "Главный зал",
+            ar: "القاعة الرئيسية",
+          },
+          desc: {
+            en: "Seamless corridors.",
+            ru: "Бесшовные коридоры.",
+            ar: "ممرات سلسة.",
+          },
+        },
+        {
+          day: 5,
+          start: "10:30",
+          end: "12:00",
+          type: "panel",
+          tags: ["panel"],
+          title: {
+            en: "Food Security & AgriTech",
+            ru: "Продовольствие и агротех",
+            ar: "الأمن الغذائي والتقنيات الزراعية",
+          },
+          location: { en: "Room E", ru: "Зал E", ar: "قاعة ه" },
+          desc: {
+            en: "Supply resilience.",
+            ru: "Устойчивые цепочки.",
+            ar: "مرونة سلاسل الإمداد.",
+          },
+        },
+        {
+          day: 5,
+          start: "13:00",
+          end: "15:00",
+          type: "workshop",
+          tags: ["workshop"],
+          title: {
+            en: "Standards & Compliance",
+            ru: "Стандарты и комплаенс",
+            ar: "المعايير والامتثال",
+          },
+          location: { en: "Lab 3", ru: "Лаборатория 3", ar: "المعمل 3" },
+          desc: {
+            en: "Certifications for trade.",
+            ru: "Сертификация для торговли.",
+            ar: "شهادات للتجارة.",
+          },
+        },
+
+        {
+          day: 6,
+          start: "09:30",
+          end: "10:30",
+          type: "startup",
+          tags: ["startup", "panel"],
+          title: {
+            en: "Startup Pitch Stage",
+            ru: "Сцена питчей стартапов",
+            ar: "منصة عروض الشركات الناشئة",
+          },
+          location: {
+            en: "Main Hall",
+            ru: "Главный зал",
+            ar: "القاعة الرئيسية",
+          },
+          desc: {
+            en: "Fast pitches to jury.",
+            ru: "Короткие питчи жюри.",
+            ar: "عروض سريعة أمام لجنة.",
+          },
+        },
+        {
+          day: 6,
+          start: "11:00",
+          end: "12:30",
+          type: "panel",
+          tags: ["panel"],
+          title: {
+            en: "Cross-border Finance",
+            ru: "Трансграничные финансы",
+            ar: "التمويل عبر الحدود",
+          },
+          location: { en: "Room F", ru: "Зал F", ar: "قاعة و" },
+          desc: {
+            en: "Instruments & risk.",
+            ru: "Инструменты и риски.",
+            ar: "الأدوات والمخاطر.",
+          },
+        },
+        {
+          day: 6,
+          start: "13:00",
+          end: "14:00",
+          type: "culture",
+          tags: ["culture", "networking"],
+          title: {
+            en: "Closing Mixer",
+            ru: "Закрывающий миксер",
+            ar: "لقاء ختامي",
+          },
+          location: { en: "Garden Terrace", ru: "Терраса", ar: "التراس" },
+          desc: {
+            en: "Informal wrap-up.",
+            ru: "Неформальное завершение.",
+            ar: "ختام غير رسمي.",
+          },
+        },
+      ];
+
+      // ===== State =====
+      const state = {
+        lang: localStorage.getItem("forum_lang") || "en",
+        theme: localStorage.getItem("forum_theme") || "light",
+        day: 1,
+        tags: JSON.parse(localStorage.getItem("forum_tags") || "[]"),
+        search: "",
+      };
+
+      // ===== Helpers =====
+      const $ = (sel) => document.querySelector(sel);
+      const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+      function setLang(lang) {
+        state.lang = lang;
+        localStorage.setItem("forum_lang", lang);
+        // dir & lang
+        const ltr = lang === "ar" ? "rtl" : "ltr";
+        document.documentElement.lang = lang;
+        document.documentElement.dir = ltr;
+        // update static labels
+        const dict = i18n[lang];
+        $("#title").textContent = dict.title;
+        $$("[data-i18n]").forEach((el) => {
+          const key = el.getAttribute("data-i18n");
+          const val = dict[key];
+          if (typeof val === "function") return; // handled where used
+          if (val) el.textContent = val;
+        });
+        $$("[data-i18n-ph]").forEach((el) => {
+          const key = el.getAttribute("data-i18n-ph");
+          const val = dict[key];
+          if (val) el.setAttribute("placeholder", val);
+        });
+        // tabs re-render (labels use day(i)) & table re-render
+        renderTabs();
+        renderTable();
+        // refresh select
+        $("#langSelect").value = lang;
+      }
+
+      function setTheme(theme) {
+        state.theme = theme;
+        localStorage.setItem("forum_theme", theme);
+        document.documentElement.classList.toggle(
+          "theme-dark",
+          theme === "dark"
+        );
+      }
+
+      function duration(start, end) {
+        const [sh, sm] = start.split(":").map(Number);
+        const [eh, em] = end.split(":").map(Number);
+        let mins = eh * 60 + em - (sh * 60 + sm);
+        if (mins < 0) mins += 24 * 60;
+        const h = Math.floor(mins / 60),
+          m = mins % 60;
+        return (h ? h + "h " : "") + (m ? m + "m" : "").trim() || "—";
+      }
+
+      function renderTabs() {
+        const tabs = $(".tabs");
+        tabs.innerHTML = "";
+        for (let i = 1; i <= 6; i++) {
+          const btn = document.createElement("button");
+          btn.role = "tab";
+          btn.ariaSelected = state.day === i;
+          const label = i18n[state.lang].day(i);
+          btn.textContent = label;
+          btn.classList.toggle("active", state.day === i);
+          btn.addEventListener("click", () => {
+            state.day = i;
+            renderTabs();
+            renderTable();
+          });
+          tabs.appendChild(btn);
+        }
+      }
+
+      function matchesFilters(ev) {
+        // Tag filter
+        if (state.tags.length) {
+          if (!ev.tags.some((t) => state.tags.includes(t))) return false;
+        }
+        // Search filter
+        if (state.search) {
+          const needle = state.search.toLowerCase();
+          const lang = state.lang;
+          const hay = [ev.title[lang], ev.desc[lang], ev.location[lang]]
+            .join(" ")
+            .toLowerCase();
+          if (!hay.includes(needle)) return false;
+        }
+        return true;
+      }
+
+      function renderTable() {
+        const tbody = $("#scheduleTable tbody");
+        const dict = i18n[state.lang];
+        tbody.innerHTML = "";
+        const dayEvents = events
+          .filter((e) => e.day === state.day)
+          .sort((a, b) => a.start.localeCompare(b.start));
+        const visible = dayEvents.filter(matchesFilters);
+        for (const ev of visible) {
+          const tr = document.createElement("tr");
+          // time
+          const tdTime = document.createElement("td");
+          tdTime.textContent = `${ev.start} – ${ev.end}`;
+          tr.appendChild(tdTime);
+          // event
+          const tdEvent = document.createElement("td");
+          const title = document.createElement("div");
+          title.innerHTML = `<strong>${ev.title[state.lang]}</strong>`;
+          tdEvent.appendChild(title);
+          const desc = document.createElement("div");
+          desc.className = "muted";
+          desc.textContent = ev.desc[state.lang];
+          tdEvent.appendChild(desc);
+          tr.appendChild(tdEvent);
+          // duration
+          const tdDur = document.createElement("td");
+          tdDur.textContent = duration(ev.start, ev.end);
+          tr.appendChild(tdDur);
+          // location
+          const tdLoc = document.createElement("td");
+          tdLoc.textContent = ev.location[state.lang];
+          tr.appendChild(tdLoc);
+          // type/tags
+          const tdType = document.createElement("td");
+          const typeLabel = dict.types[ev.type] || ev.type;
+          const typeSpan = document.createElement("span");
+          typeSpan.className = "tag";
+          typeSpan.textContent = typeLabel;
+          tdType.appendChild(typeSpan);
+          ev.tags.forEach((tag) => {
+            if (tag !== ev.type) {
+              const sp = document.createElement("span");
+              sp.className = "tag";
+              sp.textContent = dict.types[tag] || tag;
+              tdType.appendChild(sp);
+            }
+          });
+          tr.appendChild(tdType);
+          tbody.appendChild(tr);
+        }
+        // Empty state
+        if (!visible.length) {
+          const tr = document.createElement("tr");
+          const td = document.createElement("td");
+          td.colSpan = 5;
+          td.className = "muted";
+          td.textContent =
+            state.lang === "ar"
+              ? "لا توجد نتائج مطابقة."
+              : state.lang === "ru"
+              ? "Нет подходящих результатов."
+              : "No matching results.";
+          tr.appendChild(td);
+          tbody.appendChild(tr);
+        }
+      }
+
+      function buildTagChips() {
+        const wrap = $("#tagChips");
+        wrap.innerHTML = "";
+        TAGS.forEach((t) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "chip";
+          b.textContent = i18n[state.lang].types[t] || t;
+          b.dataset.value = t;
+          if (state.tags.includes(t)) b.classList.add("active");
+          b.addEventListener("click", () => {
+            b.classList.toggle("active");
+          });
+          wrap.appendChild(b);
+        });
+      }
+
+      // ===== Modal Controls =====
+      const modal = $("#tagsModal");
+      $("#openTags").addEventListener("click", () => {
+        buildTagChips();
+        modal.classList.add("active");
+      });
+      modal.addEventListener("click", (e) => {
+        if (e.target.hasAttribute("data-close"))
+          modal.classList.remove("active");
+      });
+      modal
+        .querySelector('[data-action="apply"]')
+        .addEventListener("click", () => {
+          const selected = $$("#tagChips .chip.active").map(
+            (c) => c.dataset.value
+          );
+          state.tags = selected;
+          localStorage.setItem("forum_tags", JSON.stringify(selected));
+          modal.classList.remove("active");
+          renderTable();
+        });
+      modal
+        .querySelector('[data-action="clear"]')
+        .addEventListener("click", () => {
+          state.tags = [];
+          localStorage.setItem("forum_tags", "[]");
+          buildTagChips();
+          renderTable();
+        });
+
+      // ===== Search Controls =====
+      $("#searchInput").addEventListener("input", (e) => {
+        state.search = e.target.value.trim();
+        renderTable();
+      });
+      $("#clearSearch").addEventListener("click", () => {
+        state.search = "";
+        $("#searchInput").value = "";
+        renderTable();
+      });
+
+      // ===== Theme + Lang Controls =====
+      $("#themeToggle").addEventListener("click", () => {
+        setTheme(state.theme === "light" ? "dark" : "light");
+      });
+      $("#langSelect").addEventListener("change", (e) =>
+        setLang(e.target.value)
+      );
+
+      // ===== Init =====
+      (function init() {
+        setTheme(state.theme);
+        setLang(state.lang);
+        renderTabs();
+        renderTable();
+      })();
+    </script>
+  </body>
+</html>
